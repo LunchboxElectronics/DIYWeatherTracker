@@ -7,7 +7,8 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG   0   // 1 is on and 0 is off
+#define DEBUG             0   // 1 is on and 0 is off
+#define FORCECONDITION    4   // force a certain weather condition
 
 // These are the pins used for the LEDs, keep in mind problems with the number
 // of PWM outputs on the Photon! Check this for more info:
@@ -21,8 +22,17 @@
 #define sun2    RX
 #define reds    D5
 
+// This is the max value for PWM flicker
+#define MAXPWM  255
+
 // These are the global variables
 volatile int condition = 0;
+int min_pwm = 20;
+int head = min_pwm;
+int dir_head = 1;
+int toggler = 0;
+int delaytime = 10;
+
 
 // These are the functions for each weather condition, called by an IFTTT recipe
 void rain(const char *event, const char *data)
@@ -70,8 +80,10 @@ void setup()
   Particle.subscribe("clear", clear, MY_DEVICES);
   Particle.subscribe("cloud", cloud, MY_DEVICES);
 
-  if (DEBUG)
+  if (DEBUG){
     pinMode(D7, OUTPUT);
+    digitalWrite(D7, HIGH);
+  }
 
   // These lines set up our LED output pins
   pinMode(rain1, OUTPUT);
@@ -84,9 +96,9 @@ void setup()
   pinMode(reds, OUTPUT);
 
   digitalWrite(trees, HIGH);
-  delay(1000);
+  delay(500);
   digitalWrite(trees, LOW);
-  delay(1000);
+  delay(500);
   digitalWrite(trees, HIGH);
 
   if (DEBUG)
@@ -95,32 +107,63 @@ void setup()
 
 void loop()
 {
+  // The is the head range limiter for the PWM oscillator
+  if (head <= min_pwm){    // if less than or equal to minimum
+    dir_head = 1;         // Swap direction of the head
+    if (head < min_pwm){   // if it is less than the minimum, set to minimum
+      head = min_pwm;
+    }
+  }else if (head >= MAXPWM){  // Same as above in reverse
+    dir_head = 0;
+    toggler = !toggler;       // Toggler used for changing LED flickers
+    if (head > MAXPWM){
+      head = MAXPWM;
+    }
+  }
+
+  // This switch statement checks the weather condition and sets LEDs
   switch (condition)
   {
     case 1 :      // Rain
       weatherOff();
-      digitalWrite(rain1, HIGH);
-      digitalWrite(rain2, HIGH);
+      min_pwm = 0;
+      delaytime = 0;
+      if (toggler){
+        analogWrite(rain1, head);
+        digitalWrite(rain2, HIGH);
+      }else{
+        analogWrite(rain2, head);
+        digitalWrite(rain1, HIGH);
+      }
       digitalWrite(cloud1, HIGH);
       digitalWrite(cloud2, HIGH);
       break;
 
     case 2 :      // Cloudy
       weatherOff();
-      digitalWrite(cloud1, HIGH);
-      digitalWrite(cloud2, HIGH);
+      min_pwm = 20;
+      delaytime = 10;
+      if (toggler){
+        analogWrite(cloud1, head);
+        digitalWrite(cloud2, HIGH);
+      }else{
+        analogWrite(cloud2, head);
+        digitalWrite(cloud1, HIGH);
+      }
       break;
 
     case 3 :      // Clear
       weatherOff();
+      min_pwm = 20;
       digitalWrite(sun1, HIGH);
       digitalWrite(sun2, HIGH);
       break;
 
     case 4 :      // Snow
       weatherOff();
-      digitalWrite(rain1, HIGH);
-      digitalWrite(rain2, HIGH);
+      min_pwm = 0;
+      analogWrite(rain1, head);
+      analogWrite(rain2, head);
       digitalWrite(cloud1, HIGH);
       digitalWrite(cloud2, HIGH);
       break;
@@ -130,13 +173,20 @@ void loop()
       digitalWrite(reds, HIGH);
   }
 
+  // This is the actual PWM oscillator
+  if (dir_head){
+    head = head + 1;
+  }else{
+    head = head - 1;
+  }
+  delay(delaytime);
+
+
+
+  // Debug section
   if (DEBUG)
   {
+    condition = FORCECONDITION;
     Serial.println("in loop");
-    digitalWrite(D7, HIGH);
-    delay(1000);
-    Serial.println("a");
-    digitalWrite(D7, LOW);
-    delay(1000);
   }
 }
