@@ -7,7 +7,7 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG   1   // 1 is on and 0 is off
+#define DEBUG   0   // 1 is on and 0 is off
 
 // These are the pins used for the LEDs, keep in mind problems with the number
 // of PWM outputs on the Photon! Check this for more info:
@@ -21,9 +21,7 @@
 #define sun2    RX
 #define reds    D5
 
-// These are the global variables. We need to use globals because the functions
-// that change this variable aren't being called explicitly in our software,
-// they're being called at random times, so we can't just pass them normally.
+// These are the global variables
 volatile int condition = 0;
 
 // These are the functions for each weather condition, called by an IFTTT recipe
@@ -45,6 +43,17 @@ void clear(const char *event, const char *data)
 void snow(const char *event, const char *data)
 {
   condition = 4;
+}
+
+void weatherOff()
+{
+  digitalWrite(reds, LOW);
+  digitalWrite(cloud1, LOW);
+  digitalWrite(cloud2, LOW);
+  digitalWrite(rain1, LOW);
+  digitalWrite(rain2, LOW);
+  digitalWrite(sun1, LOW);
+  digitalWrite(sun2, LOW);
 }
 
 void setup()
@@ -77,6 +86,8 @@ void setup()
   digitalWrite(trees, HIGH);
   delay(1000);
   digitalWrite(trees, LOW);
+  delay(1000);
+  digitalWrite(trees, HIGH);
 
   if (DEBUG)
     Serial.println("finish setup");
@@ -84,6 +95,40 @@ void setup()
 
 void loop()
 {
+  switch (condition)
+  {
+    case 1 :      // Rain
+      weatherOff();
+      digitalWrite(rain1, HIGH);
+      digitalWrite(rain2, HIGH);
+      digitalWrite(cloud1, HIGH);
+      digitalWrite(cloud2, HIGH);
+      break;
+
+    case 2 :      // Cloudy
+      weatherOff();
+      digitalWrite(cloud1, HIGH);
+      digitalWrite(cloud2, HIGH);
+      break;
+
+    case 3 :      // Clear
+      weatherOff();
+      digitalWrite(sun1, HIGH);
+      digitalWrite(sun2, HIGH);
+      break;
+
+    case 4 :      // Snow
+      weatherOff();
+      digitalWrite(rain1, HIGH);
+      digitalWrite(rain2, HIGH);
+      digitalWrite(cloud1, HIGH);
+      digitalWrite(cloud2, HIGH);
+      break;
+
+    default :
+      weatherOff();
+      digitalWrite(reds, HIGH);
+  }
 
   if (DEBUG)
   {
