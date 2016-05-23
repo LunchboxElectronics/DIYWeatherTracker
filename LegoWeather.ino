@@ -8,7 +8,7 @@
 */
 
 #define DEBUG             0   // 1 is on and 0 is off
-#define FORCECONDITION    4   // force a certain weather condition
+#define FORCECONDITION    4   // force a certain weather condition, with Debug
 
 // These are the pins used for the LEDs, keep in mind problems with the number
 // of PWM outputs on the Photon! Check this for more info:
