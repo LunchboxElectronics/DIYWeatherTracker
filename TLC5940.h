@@ -13,8 +13,8 @@
 
 #include "application.h"
 //include for good measure, even though this works without these
-#include <stm32f2xx.h>
-#include <stm32f2xx_gpio.h>
+//#include <stm32f2xx.h>
+//#include <stm32f2xx_gpio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
 
 
 class TLC5940 {
-    
+
     private:
 
         //Photon, sysclock is 120mhz. If clock is 30mhz, then prescaled is set to (120 / 30) - 1 = 4 - 1, so 1/4 of 120mhz.
@@ -39,17 +39,17 @@ class TLC5940 {
         //uint8_t needsXlat;
 
         uint8_t gsData[NUM_TLCS * 24];
-        
+
         TLC5940() {
         };
-        
-        
+
+
         void init();
         void set(uint8_t channel, uint16_t value);
         void update();
         void clear();
         void xlat();
-        
+
 };
 
 
