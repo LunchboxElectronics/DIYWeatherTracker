@@ -10,20 +10,22 @@
 #define DEBUG             0   // 1 is on and 0 is off
 #define FORCECONDITION    4   // force a certain weather condition, with Debug
 
-// These are the pins used for the LEDs, keep in mind problems with the number
-// of PWM outputs on the Photon! Check this for more info:
-// https://docs.particle.io/datasheets/photon-datasheet/#peripherals-and-gpio
-#define rain1   D0
-#define rain2   D1
-#define cloud1  D2
-#define cloud2  D3
-#define trees   D4
-#define sun1    TX
-#define sun2    RX
-#define reds    D5
+// How many boards do you have chained?
+#define NUM_TLC5947 1
+
+#define data      D0
+#define clk       D1
+#define latch     D2
+
+// These are the pins used for the LEDs on the TLC5947
+int _sun[6] = {0,1,2,3,4,5};
+int _rain[6] = {6,7,8,9,10,11};
+int _clouds[6] = {12,13,14,15,16,17};
+int _trees[3] = {18,19,20};
+int _reds[3] = {21,22,23};
 
 // This is the max value for PWM flicker
-#define MAXPWM  255
+#define MAXPWM  4095
 
 // These are the global variables
 volatile int condition = 0;
@@ -33,6 +35,47 @@ int dir_head = 1;
 int toggler = 0;
 int delaytime = 10;
 
+// The Adafruit library doesn't work with the Photon! These functions emulate it
+uint16_t pwmbuffer[2*24*NUM_TLC5947];
+
+boolean driverBegin() {
+  if (!pwmbuffer) return false;
+
+  pinMode(data, OUTPUT);
+  pinMode(clk, OUTPUT);
+  pinMode(latch, OUTPUT);
+  digitalWrite(latch, LOW);
+
+  return true;
+}
+
+void driverSetPWM(int chan, int pwm){
+  if (pwm > 4095) pwm = 4095;
+  if (chan > 24*NUM_TLC5947) return;
+  pwmbuffer[chan] = pwm;
+}
+
+void driverWrite(){
+  digitalWrite(latch, LOW);
+  // 24 channels per TLC5974
+  for (int8_t c=24*NUM_TLC5947 - 1; c >= 0 ; c--) {
+    // 12 bits per channel, send MSB first
+    for (int8_t b=11; b>=0; b--) {
+      digitalWrite(clk, LOW);
+
+      if (pwmbuffer[c] & (1 << b))
+        digitalWrite(data, HIGH);
+      else
+        digitalWrite(data, LOW);
+
+      digitalWrite(clk, HIGH);
+    }
+  }
+  digitalWrite(clk, LOW);
+
+  digitalWrite(latch, HIGH);
+  digitalWrite(latch, LOW);
+}
 
 // These are the functions for each weather condition, called by an IFTTT recipe
 void rain(const char *event, const char *data)
@@ -55,16 +98,29 @@ void snow(const char *event, const char *data)
   condition = 4;
 }
 
+
+// These are functions for performing blinks or other lighting fx
+
+void setArray(int array[], int size, int value)
+{
+  int i;
+  for(i = 0; i < size; i++)
+  {
+    driverSetPWM(array[i], value);
+  }
+  driverWrite();
+}
+
 void weatherOff()
 {
-  digitalWrite(reds, LOW);
-  digitalWrite(cloud1, LOW);
-  digitalWrite(cloud2, LOW);
-  digitalWrite(rain1, LOW);
-  digitalWrite(rain2, LOW);
-  digitalWrite(sun1, LOW);
-  digitalWrite(sun2, LOW);
+  setArray(_sun, 6, 0);
+  setArray(_clouds, 6, 0);
+  setArray(_rain, 6, 0);
+  setArray(_reds, 3, 0);
 }
+
+
+// This is the main block of code
 
 void setup()
 {
@@ -80,26 +136,24 @@ void setup()
   Particle.subscribe("clear", clear, MY_DEVICES);
   Particle.subscribe("cloud", cloud, MY_DEVICES);
 
+  // Setup the driver
+  driverBegin();
+
   if (DEBUG){
     pinMode(D7, OUTPUT);
     digitalWrite(D7, HIGH);
   }
 
-  // These lines set up our LED output pins
-  pinMode(rain1, OUTPUT);
-  pinMode(rain2, OUTPUT);
-  pinMode(sun1, OUTPUT);
-  pinMode(sun2, OUTPUT);
-  pinMode(cloud1, OUTPUT);
-  pinMode(cloud2, OUTPUT);
-  pinMode(trees, OUTPUT);
-  pinMode(reds, OUTPUT);
-
-  digitalWrite(trees, HIGH);
-  delay(500);
-  digitalWrite(trees, LOW);
-  delay(500);
-  digitalWrite(trees, HIGH);
+  weatherOff();
+  setArray(_trees, 3, MAXPWM);
+  delay(1000);
+  setArray(_trees, 3, 0);
+  delay(1000);
+  setArray(_trees, 3, MAXPWM);
+  delay(1000);
+  setArray(_trees, 3, 0);
+  delay(1000);
+  setArray(_trees, 3, MAXPWM);
 
   if (DEBUG)
     Serial.println("finish setup");
@@ -126,51 +180,31 @@ void loop()
   {
     case 1 :      // Rain
       weatherOff();
-      min_pwm = 0;
-      delaytime = 0;
-      if (toggler){
-        analogWrite(rain1, head);
-        digitalWrite(rain2, HIGH);
-      }else{
-        analogWrite(rain2, head);
-        digitalWrite(rain1, HIGH);
-      }
-      digitalWrite(cloud1, HIGH);
-      digitalWrite(cloud2, HIGH);
+      setArray(_clouds, 6, MAXPWM);
+      setArray(_rain, 6, head);
       break;
 
     case 2 :      // Cloudy
       weatherOff();
-      min_pwm = 20;
+      min_pwm = 100;
       delaytime = 10;
-      if (toggler){
-        analogWrite(cloud1, head);
-        digitalWrite(cloud2, HIGH);
-      }else{
-        analogWrite(cloud2, head);
-        digitalWrite(cloud1, HIGH);
-      }
+      setArray(_clouds, 6, head);
       break;
 
     case 3 :      // Clear
       weatherOff();
-      min_pwm = 20;
-      digitalWrite(sun1, HIGH);
-      digitalWrite(sun2, HIGH);
+      setArray(_sun, 6, MAXPWM);
       break;
 
     case 4 :      // Snow
       weatherOff();
-      min_pwm = 0;
-      analogWrite(rain1, head);
-      analogWrite(rain2, head);
-      digitalWrite(cloud1, HIGH);
-      digitalWrite(cloud2, HIGH);
+      setArray(_clouds, 6, MAXPWM);
+      setArray(_rain, 6, head);
       break;
 
     default :
       weatherOff();
-      digitalWrite(reds, HIGH);
+      setArray(_reds, 3, MAXPWM);
   }
 
   // This is the actual PWM oscillator
