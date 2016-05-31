@@ -8,14 +8,14 @@
 */
 
 #define DEBUG             0   // 1 is on and 0 is off
-#define FORCECONDITION    4   // force a certain weather condition, with Debug
+#define FORCECONDITION    3   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
 
-#define data      D0
-#define clk       D1
-#define latch     D2
+#define _DAT       D4
+#define _CLK       D5
+#define _LAT       D6
 
 // These are the pins used for the LEDs on the TLC5947
 int _sun[6] = {0,1,2,3,4,5};
@@ -25,26 +25,26 @@ int _trees[3] = {18,19,20};
 int _reds[3] = {21,22,23};
 
 // This is the max value for PWM flicker
-#define MAXPWM  4095
+#define MAXPWM      4095
 
 // These are the global variables
 volatile int condition = 0;
 int min_pwm = 20;
 int head = min_pwm;
+int pwm_steps = 100;
 int dir_head = 1;
-int toggler = 0;
-int delaytime = 10;
+int prev_cond = 0;
 
 // The Adafruit library doesn't work with the Photon! These functions emulate it
-uint16_t pwmbuffer[2*24*NUM_TLC5947];
+unsigned int pwmbuffer[2*24*NUM_TLC5947];
 
 boolean driverBegin() {
   if (!pwmbuffer) return false;
 
-  pinMode(data, OUTPUT);
-  pinMode(clk, OUTPUT);
-  pinMode(latch, OUTPUT);
-  digitalWrite(latch, LOW);
+  pinMode(_DAT, OUTPUT);
+  pinMode(_CLK, OUTPUT);
+  pinMode(_LAT, OUTPUT);
+  digitalWrite(_LAT, LOW);
 
   return true;
 }
@@ -56,25 +56,25 @@ void driverSetPWM(int chan, int pwm){
 }
 
 void driverWrite(){
-  digitalWrite(latch, LOW);
+  digitalWrite(_LAT, LOW);
   // 24 channels per TLC5974
-  for (int8_t c=24*NUM_TLC5947 - 1; c >= 0 ; c--) {
+  for (int c=24*NUM_TLC5947 - 1; c >= 0 ; c--) {
     // 12 bits per channel, send MSB first
-    for (int8_t b=11; b>=0; b--) {
-      digitalWrite(clk, LOW);
+    for (int b=11; b>=0; b--) {
+      digitalWrite(_CLK, LOW);
 
       if (pwmbuffer[c] & (1 << b))
-        digitalWrite(data, HIGH);
+        digitalWrite(_DAT, HIGH);
       else
-        digitalWrite(data, LOW);
+        digitalWrite(_DAT, LOW);
 
-      digitalWrite(clk, HIGH);
+      digitalWrite(_CLK, HIGH);
     }
   }
-  digitalWrite(clk, LOW);
+  digitalWrite(_CLK, LOW);
 
-  digitalWrite(latch, HIGH);
-  digitalWrite(latch, LOW);
+  digitalWrite(_LAT, HIGH);
+  digitalWrite(_LAT, LOW);
 }
 
 // These are the functions for each weather condition, called by an IFTTT recipe
@@ -146,13 +146,13 @@ void setup()
 
   weatherOff();
   setArray(_trees, 3, MAXPWM);
-  delay(1000);
+  delay(200);
   setArray(_trees, 3, 0);
-  delay(1000);
+  delay(200);
   setArray(_trees, 3, MAXPWM);
-  delay(1000);
+  delay(200);
   setArray(_trees, 3, 0);
-  delay(1000);
+  delay(200);
   setArray(_trees, 3, MAXPWM);
 
   if (DEBUG)
@@ -169,8 +169,7 @@ void loop()
     }
   }else if (head >= MAXPWM){  // Same as above in reverse
     dir_head = 0;
-    toggler = !toggler;       // Toggler used for changing LED flickers
-    if (head > MAXPWM){
+    if (head >= MAXPWM){
       head = MAXPWM;
     }
   }
@@ -179,42 +178,56 @@ void loop()
   switch (condition)
   {
     case 1 :      // Rain
-      weatherOff();
+      if (prev_cond != 1){
+        weatherOff();
+        prev_cond = 1;
+      }
       setArray(_clouds, 6, MAXPWM);
       setArray(_rain, 6, head);
       break;
 
     case 2 :      // Cloudy
-      weatherOff();
-      min_pwm = 100;
-      delaytime = 10;
+      if (prev_cond != 2){
+        weatherOff();
+        prev_cond = 2;
+      }
+      min_pwm = 400;
+      pwm_steps = 10;
       setArray(_clouds, 6, head);
       break;
 
     case 3 :      // Clear
-      weatherOff();
+      if (prev_cond != 3){
+        weatherOff();
+        prev_cond = 3;
+      }
       setArray(_sun, 6, MAXPWM);
       break;
 
     case 4 :      // Snow
-      weatherOff();
+      if (prev_cond != 4){
+        weatherOff();
+        prev_cond = 4;
+      }
       setArray(_clouds, 6, MAXPWM);
       setArray(_rain, 6, head);
       break;
 
     default :
-      weatherOff();
+      if (prev_cond != 0){
+        weatherOff();
+        prev_cond = 0;
+      }
       setArray(_reds, 3, MAXPWM);
   }
 
   // This is the actual PWM oscillator
   if (dir_head){
-    head = head + 1;
+    head = head + pwm_steps;
   }else{
-    head = head - 1;
+    head = head - pwm_steps;
   }
-  delay(delaytime);
-
+  delay(100);
 
 
   // Debug section
