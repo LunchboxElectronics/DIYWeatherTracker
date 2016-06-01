@@ -7,8 +7,8 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG             1   // 1 is on and 0 is off
-#define FORCECONDITION    1   // force a certain weather condition, with Debug
+#define DEBUG             0   // 1 is on and 0 is off
+#define FORCECONDITION    3   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
@@ -20,7 +20,8 @@
 // These are the pins used for the LEDs on the TLC5947
 int _sun[6] = {0,1,2,3,4,5};
 int _rain[6] = {6,7,8,9,10,11};
-int _clouds[6] = {12,13,14,15,16,17};
+int _clouds[4] = {12,13,14,15};
+int _snow[2] = {16,17};
 int _trees[3] = {18,19,20};
 int _reds[3] = {21,22,23};
 
@@ -219,49 +220,67 @@ void loop()
   switch (condition)
   {
     case 1 :      // Rain
+      // This if statement is used to reduce flicker, may or may not be necessary in your case.
+      // It simply turns off all weather elements ONLY the first time it hits this loop
       if (prev_cond != 1){
         weatherOff();
         prev_cond = 1;
       }
+      // Use the next 4 lines to tune what you want your effects to look like!
       min_pwm = 0;
-      pwm_steps = 10;
+      pwm_steps = 100;
       setArray(_clouds, 6, MAXPWM);
-      flowThru(_rain, 6, 1000);
+      flowThru(_rain, 6, 0);
       break;
 
     case 2 :      // Cloudy
+      // This if statement is used to reduce flicker, may or may not be necessary in your case.
+      // It simply turns off all weather elements ONLY the first time it hits this loop
       if (prev_cond != 2){
         weatherOff();
         prev_cond = 2;
       }
+      // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
       pwm_steps = 1;
       setArray(_clouds, 6, head);
       break;
 
     case 3 :      // Clear
+      // This if statement is used to reduce flicker, may or may not be necessary in your case.
+      // It simply turns off all weather elements ONLY the first time it hits this loop
       if (prev_cond != 3){
         weatherOff();
         prev_cond = 3;
       }
-      setArray(_sun, 6, MAXPWM);
+      // Use the next 4 lines to tune what you want your effects to look like!
+      min_pwm = 400;    // this is the minimum brightness
+      pwm_steps = 1;    // this is the speed
+      setArray(_sun, 6, head);   // This is the type of effect
       break;
 
     case 4 :      // Snow
+      // This if statement is used to reduce flicker, may or may not be necessary in your case.
+      // It simply turns off all weather elements ONLY the first time it hits this loop
       if (prev_cond != 4){
         weatherOff();
         prev_cond = 4;
       }
+
       setArray(_clouds, 6, MAXPWM);
       setArray(_rain, 6, head);
       break;
 
     default :     // None of the above, throw error
+      // This if statement is used to reduce flicker, may or may not be necessary in your case.
+      // It simply turns off all weather elements ONLY the first time it hits this loop
       if (prev_cond != 0){
         weatherOff();
         prev_cond = 0;
       }
-      setArray(_reds, 3, MAXPWM);
+      min_pwm = 0;
+      pwm_steps = 20;
+      flowThru(_reds, 3, 0);
   }
 
   // This is the actual PWM oscillator
