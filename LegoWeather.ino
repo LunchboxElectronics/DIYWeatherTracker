@@ -7,7 +7,7 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG             0   // 1 is on and 0 is off
+#define DEBUG             1   // 1 is on and 0 is off
 #define FORCECONDITION    3   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
@@ -158,7 +158,7 @@ void flowThru(int array[], int size, int spread)
 void weatherOff()
 {
   setArray(_sun, 6, 0);
-  setArray(_clouds, 6, 0);
+  setArray(_clouds, 4, 0);
   setArray(_rain, 6, 0);
   setArray(_reds, 3, 0);
 }
@@ -229,7 +229,7 @@ void loop()
       // Use the next 4 lines to tune what you want your effects to look like!
       min_pwm = 0;
       pwm_steps = 100;
-      setArray(_clouds, 6, MAXPWM);
+      setArray(_clouds, 4, MAXPWM);
       flowThru(_rain, 6, 0);
       break;
 
@@ -243,7 +243,7 @@ void loop()
       // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
       pwm_steps = 1;
-      setArray(_clouds, 6, head);
+      setArray(_clouds, 4, head);
       break;
 
     case 3 :      // Clear
@@ -267,7 +267,7 @@ void loop()
         prev_cond = 4;
       }
 
-      setArray(_clouds, 6, MAXPWM);
+      setArray(_clouds, 4, MAXPWM);
       setArray(_rain, 6, head);
       break;
 
