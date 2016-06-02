@@ -7,8 +7,8 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG             1   // 1 is on and 0 is off
-#define FORCECONDITION    3   // force a certain weather condition, with Debug
+#define DEBUG             0   // 1 is on and 0 is off
+#define FORCECONDITION    4   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
@@ -254,9 +254,7 @@ void loop()
         prev_cond = 3;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
-      min_pwm = 400;    // this is the minimum brightness
-      pwm_steps = 1;    // this is the speed
-      setArray(_sun, 6, head);   // This is the type of effect
+      setArray(_sun, 6, MAXPWM);   // This is the type of effect
       break;
 
     case 4 :      // Snow
@@ -266,9 +264,11 @@ void loop()
         weatherOff();
         prev_cond = 4;
       }
-
+      min_pwm = 0;
+      pwm_steps = 10;
       setArray(_clouds, 4, MAXPWM);
-      setArray(_rain, 6, head);
+      flowThru(_snow, 2, 1000);
+      flowThru(_rain, 6, 6000);
       break;
 
     default :     // None of the above, throw error
@@ -280,6 +280,7 @@ void loop()
       }
       min_pwm = 0;
       pwm_steps = 20;
+      setArray(_clouds, 4, MAXPWM);
       flowThru(_reds, 3, 0);
   }
 
