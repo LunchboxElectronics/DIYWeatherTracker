@@ -1,6 +1,7 @@
 /*
     LegoWeather - a Particle Photon app that will light up
     a lego scene depending on the current weather. Uses IFTTT for webhooks.
+    Uses Adafruit TLC5947 display driver.
 
     Teddy Lowe, May 2016
     Lunchbox Electronics
@@ -17,7 +18,10 @@
 #define _CLK       D5   // The pin plugged into the CLK line
 #define _LAT       D6   // The pin plugged into the LAT line
 
+//
 // These are the pins used for the LEDs on the TLC5947
+//
+
 int _sun[6] = {0,1,2,3,4,5};
 int _rain[6] = {6,7,8,9,10,11};
 int _clouds[4] = {12,13,14,15};
@@ -25,20 +29,30 @@ int _snow[2] = {16,17};
 int _trees[3] = {18,19,20};
 int _reds[3] = {21,22,23};
 
+//
 // This is the max value for PWM flicker
+//
+
 #define MAXPWM      4095
 
+//
 // These are the global variables
-volatile int condition = 0;     // This stores data about the current condition
-int min_pwm = 20;     // This describes how dim the LEDs will get
-volatile int head = min_pwm;   // This changes over time, to provide some pulsing light
-int pwm_steps = 100;  // This describes how fast the light will pulse
-int dir_head = 1;     // This describes whether the light is getting dimmer or brighter
-int prev_cond = 0;    // This is used to store the condition during the last loop
+//
+
+volatile int condition = 0;   // This stores data about the current condition
+int min_pwm = 20;             // This describes how dim the LEDs will get
+volatile int head = min_pwm;  // This changes over time, to provide some pulsing light
+int pwm_steps = 100;          // This describes how fast the light will pulse
+int dir_head = 1;             // This describes whether the light is getting dimmer or brighter
+int prev_cond = 0;            // This is used to store the condition during the last loop
 // These will store the size variables for the arrays
 int sizeof_sun, sizeof_rain, sizeof_clouds, sizeof_snow, sizeof_trees, sizeof_reds;
 
+
+//
 // The Adafruit library doesn't work with the Photon! These functions emulate it
+//
+
 unsigned int pwmbuffer[24*NUM_TLC5947]; // This array stores the value each channel should be at
 
 // This function sets up the output pins and begins communication with the chip
@@ -84,7 +98,9 @@ void driverWrite(){
   digitalWrite(_LAT, LOW);
 }
 
+//
 // These are the functions for each weather condition, called by an IFTTT recipe
+//
 void rain(const char *event, const char *data)
 {
   condition = 1;
@@ -106,7 +122,9 @@ void snow(const char *event, const char *data)
 }
 
 
+//
 // These are functions for performing blinks or other lighting fx
+//
 
 // This is the quick function for setting an entire array to the same value
 void setArray(int array[], int size, int value)
@@ -166,8 +184,10 @@ void weatherOff()
   setArray(_reds, sizeof_reds, 0);
 }
 
-
+//
 // This is the main block of code
+//
+
 void setup()
 {
   if(DEBUG) Serial.begin(9600);
