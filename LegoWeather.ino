@@ -35,6 +35,8 @@ volatile int head = min_pwm;   // This changes over time, to provide some pulsin
 int pwm_steps = 100;  // This describes how fast the light will pulse
 int dir_head = 1;     // This describes whether the light is getting dimmer or brighter
 int prev_cond = 0;    // This is used to store the condition during the last loop
+// These will store the size variables for the arrays
+int sizeof_sun, sizeof_rain, sizeof_clouds, sizeof_snow, sizeof_trees, sizeof_reds;
 
 // The Adafruit library doesn't work with the Photon! These functions emulate it
 unsigned int pwmbuffer[24*NUM_TLC5947]; // This array stores the value each channel should be at
@@ -157,10 +159,11 @@ void flowThru(int array[], int size, int spread)
 // This is a quick function to set all weather elements plus the red LEDs off
 void weatherOff()
 {
-  setArray(_sun, 6, 0);
-  setArray(_clouds, 4, 0);
-  setArray(_rain, 6, 0);
-  setArray(_reds, 3, 0);
+  setArray(_sun, sizeof_sun, 0);
+  setArray(_clouds, sizeof_clouds, 0);
+  setArray(_rain, sizeof_rain, 0);
+  setArray(_snow, sizeof_snow, 0);
+  setArray(_reds, sizeof_reds, 0);
 }
 
 
@@ -186,17 +189,26 @@ void setup()
     digitalWrite(D7, HIGH);
   }
 
+  // This calculates the sizeof variables
+  sizeof_sun = sizeof(_sun)/4;
+  sizeof_rain = sizeof(_rain)/4;
+  sizeof_clouds = sizeof(_clouds)/4;
+  sizeof_snow = sizeof(_snow)/4;
+  sizeof_trees = sizeof(_trees)/4;
+  sizeof_reds = sizeof(_reds)/4;
+
+
   // Flash the trees 3 times to indicate finished setup
   weatherOff();
-  setArray(_trees, 3, MAXPWM);
+  setArray(_trees, sizeof_trees, MAXPWM);
   delay(200);
-  setArray(_trees, 3, 0);
+  setArray(_trees, sizeof_trees, 0);
   delay(200);
-  setArray(_trees, 3, MAXPWM);
+  setArray(_trees, sizeof_trees, MAXPWM);
   delay(200);
-  setArray(_trees, 3, 0);
+  setArray(_trees, sizeof_trees, 0);
   delay(200);
-  setArray(_trees, 3, MAXPWM);
+  setArray(_trees, sizeof_trees, MAXPWM);
 
   if (DEBUG) Serial.println("finish setup");
 }
@@ -229,8 +241,8 @@ void loop()
       // Use the next 4 lines to tune what you want your effects to look like!
       min_pwm = 0;
       pwm_steps = 100;
-      setArray(_clouds, 4, MAXPWM);
-      flowThru(_rain, 6, 0);
+      setArray(_clouds, sizeof_clouds, MAXPWM);
+      flowThru(_rain, sizeof_rain, 0);
       break;
 
     case 2 :      // Cloudy
@@ -243,7 +255,7 @@ void loop()
       // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
       pwm_steps = 1;
-      setArray(_clouds, 4, head);
+      setArray(_clouds, sizeof_clouds, head);
       break;
 
     case 3 :      // Clear
@@ -254,7 +266,7 @@ void loop()
         prev_cond = 3;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
-      setArray(_sun, 6, MAXPWM);   // This is the type of effect
+      setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
       break;
 
     case 4 :      // Snow
@@ -266,9 +278,9 @@ void loop()
       }
       min_pwm = 0;
       pwm_steps = 10;
-      setArray(_clouds, 4, MAXPWM);
-      flowThru(_snow, 2, 1000);
-      flowThru(_rain, 6, 6000);
+      setArray(_clouds, sizeof_clouds, MAXPWM);
+      flowThru(_snow, sizeof_snow, 1000);
+      flowThru(_rain, sizeof_rain, 6000);
       break;
 
     default :     // None of the above, throw error
@@ -280,8 +292,8 @@ void loop()
       }
       min_pwm = 0;
       pwm_steps = 20;
-      setArray(_clouds, 4, MAXPWM);
-      flowThru(_reds, 3, 0);
+      setArray(_clouds, sizeof_clouds, MAXPWM);
+      flowThru(_reds, sizeof_reds, 0);
   }
 
   // This is the actual PWM oscillator
