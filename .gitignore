@@ -46,5 +46,11 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Misc
+.doc
+.docx
+.jpg
+write up
+
 # The weird photon .bin file
 *.bin
