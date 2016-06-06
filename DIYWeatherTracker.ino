@@ -1,5 +1,5 @@
 /*
-    LegoWeather - a Particle Photon app that will light up
+    DIYWeatherTracker - a Particle Photon app that will light up
     a lego scene depending on the current weather. Uses IFTTT for webhooks.
     Uses Adafruit TLC5947 display driver.
 
