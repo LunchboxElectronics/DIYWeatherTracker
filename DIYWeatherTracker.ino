@@ -8,8 +8,8 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG             0   // 1 is on and 0 is off
-#define FORCECONDITION    4   // force a certain weather condition, with Debug
+#define DEBUG             1   // 1 is on and 0 is off
+#define FORCECONDITION    -1   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
@@ -36,6 +36,12 @@ int _reds[3] = {21,22,23};
 #define MAXPWM      4095
 
 //
+// This is the time between API calls, in milliseconds
+//
+
+#define REFRESHTIME   30000
+
+//
 // These are the global variables
 //
 
@@ -45,9 +51,12 @@ volatile int head = min_pwm;  // This changes over time, to provide some pulsing
 int pwm_steps = 100;          // This describes how fast the light will pulse
 int dir_head = 1;             // This describes whether the light is getting dimmer or brighter
 int prev_cond = 0;            // This is used to store the condition during the last loop
+
+unsigned long currentMillis = 0;  // These are used for time between API calls
+unsigned long prevMillis = 0;
+
 // These will store the size variables for the arrays
 int sizeof_sun, sizeof_rain, sizeof_clouds, sizeof_snow, sizeof_trees, sizeof_reds;
-
 
 //
 // The Adafruit library doesn't work with the Photon! These functions emulate it
@@ -162,7 +171,7 @@ void weatherOff()
 
 // This is called when the webhook response is received, it will set condition
 void parseWeather(const char *event, const char *value){
-
+  Serial.println(value);
 }
 
 //
@@ -195,6 +204,8 @@ void setup()
   sizeof_trees = sizeof(_trees)/4;
   sizeof_reds = sizeof(_reds)/4;
 
+  // Make the initial API call
+  Particle.publish("getWeather", PRIVATE);
 
   // Flash the trees 3 times to indicate finished setup
   weatherOff();
@@ -301,11 +312,18 @@ void loop()
     head = head - pwm_steps;
   }
 
+  // This counts to REFRESHTIME and then makes another API call
+  currentMillis = millis();
+  if (currentMillis - prevMillis > REFRESHTIME){
+    prevMillis = currentMillis;
+    Particle.publish("getWeather", PRIVATE);
+  }
 
   // Debug section
   if (DEBUG)
   {
-    condition = FORCECONDITION;
+    if (FORCECONDITION != -1)
+      condition = FORCECONDITION;
     Serial.println("in loop");
   }
 }
