@@ -175,16 +175,16 @@ void parseWeather(const char *event, const char *value){
 
   // Set the current condition to the value from the API call
   // clear-day, clear-night, rain, snow, sleet, wind, fog, cloudy, partly-cloudy-day, or partly-cloudy-night
-  if (value == "clear-day")                   condition = 1;
-  else if (value == "clear-night")            condition = 2;
-  else if (value == "rain")                   condition = 3;
-  else if (value == "snow")                   condition = 4;
-  else if (value == "sleet")                  condition = 5;
-  else if (value == "wind")                   condition = 6;
-  else if (value == "fog")                    condition = 7;
-  else if (value == "cloudy")                 condition = 8;
-  else if (value == "partly-cloudy-day")      condition = 9;
-  else if (value == "partly-cloudy-night")    condition = 10;
+  if (*value == 'c')                   condition = 1;
+  //else if (value == "clear-night")            condition = 2;
+  else if (*value == 'r')                   condition = 3;
+  else if (*value == 's')                   condition = 4;
+  //else if (*value == "sleet")                  condition = 5;
+  else if (*value == 'w')                   condition = 6;
+  else if (*value == 'f')                    condition = 7;
+  else if (*value == 'c')                 condition = 8;
+  else if (*value == 'p')      condition = 9;
+  //else if (*value == 'p')    condition = 10;
   else condition = 0;
   Serial.println(condition);
 }
