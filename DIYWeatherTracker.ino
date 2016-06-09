@@ -99,30 +99,6 @@ void driverWrite(){
 }
 
 //
-// These are the functions for each weather condition, called by an IFTTT recipe
-//
-void rain(const char *event, const char *data)
-{
-  condition = 1;
-}
-
-void cloud(const char *event, const char *data)
-{
-  condition = 2;
-}
-
-void clear(const char *event, const char *data)
-{
-  condition = 3;
-}
-
-void snow(const char *event, const char *data)
-{
-  condition = 4;
-}
-
-
-//
 // These are functions for performing blinks or other lighting fx
 //
 
@@ -184,6 +160,11 @@ void weatherOff()
   setArray(_reds, sizeof_reds, 0);
 }
 
+// This is called when the webhook response is received, it will set condition
+void parseWeather(const char *event, const char *value){
+
+}
+
 //
 // This is the main block of code
 //
@@ -196,10 +177,7 @@ void setup()
   // When something happens with that event, it calls the function whose name is
   // between the first and second commas. The MY_DEVICES flag ensures that your
   // device isn't picking up every public event with the same name as yours
-  Particle.subscribe("rain", rain, MY_DEVICES);
-  Particle.subscribe("snow", snow, MY_DEVICES);
-  Particle.subscribe("clear", clear, MY_DEVICES);
-  Particle.subscribe("cloud", cloud, MY_DEVICES);
+  Particle.subscribe("hook-response/getWeather", parseWeather, MY_DEVICES);
 
   // Setup the driver
   driverBegin();
