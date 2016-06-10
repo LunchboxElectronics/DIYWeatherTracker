@@ -39,7 +39,7 @@ int _reds[3] = {21,22,23};
 // This is the time between API calls, in milliseconds
 //
 
-#define REFRESHTIME   900000
+#define REFRESHTIME   3600000
 
 //
 // These are the global variables
