@@ -8,8 +8,8 @@
     http://www.lunchboxelectronics.com/
 */
 
-#define DEBUG             1   // 1 is on and 0 is off
-#define FORCECONDITION    -1   // force a certain weather condition, with Debug
+#define DEBUG             0   // 1 is on and 0 is off
+#define FORCECONDITION    3   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
@@ -39,7 +39,7 @@ int _reds[3] = {21,22,23};
 // This is the time between API calls, in milliseconds
 //
 
-#define REFRESHTIME   30000
+#define REFRESHTIME   900000
 
 //
 // These are the global variables
@@ -169,22 +169,58 @@ void weatherOff()
   setArray(_reds, sizeof_reds, 0);
 }
 
+//
 // This is called when the webhook response is received, it will set condition
+//
+
 void parseWeather(const char *event, const char *value){
   if (DEBUG) Serial.print(value);
 
   // Set the current condition to the value from the API call
   // clear-day, clear-night, rain, snow, sleet, wind, fog, cloudy, partly-cloudy-day, or partly-cloudy-night
-  if (*value == 'c')                   condition = 1;
-  //else if (value == "clear-night")            condition = 2;
-  else if (*value == 'r')                   condition = 3;
-  else if (*value == 's')                   condition = 4;
-  //else if (*value == "sleet")                  condition = 5;
-  else if (*value == 'w')                   condition = 6;
-  else if (*value == 'f')                    condition = 7;
-  else if (*value == 'c')                 condition = 8;
-  else if (*value == 'p')      condition = 9;
-  //else if (*value == 'p')    condition = 10;
+  if (*value == 'c'){
+    value = value+2;
+    if (*value == 'e'){
+      value = value + 4;
+      if (*value == 'd'){
+        condition = 1;  // clear-day
+        return;
+      }else if (*value == 'n'){
+        condition = 2;  // clear-night
+        return;
+      }
+    }else if (*value == 'o'){
+      condition = 8;  // cloudy
+      return;
+    }
+  }else if (*value == 'r'){
+    condition = 3;  // rain
+    return;
+  }else if (*value == 's'){
+    value = value + 1;
+    if (*value == 'n'){
+      condition = 4;  // snow
+      return;
+    }else if (*value == 'l'){
+      condition = 5;  // sleet
+      return;
+    }
+  }else if (*value == 'w'){
+    condition = 6;  // wind
+    return;
+  }else if (*value == 'f'){
+    condition = 7;  // fog
+    return;
+  }else if (*value == 'p'){
+    value = value + 14;
+    if (*value == 'd'){
+      condition = 9;  // partly-cloudy-day
+      return;
+    }else if (*value == 'n'){
+      condition = 10;  // partly-cloudy-night
+      return;
+    }
+  }
   else condition = 0;
   Serial.println(condition);
 }
@@ -259,31 +295,31 @@ void loop()
     case 1 :  // clear-day
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 3){
+      if (prev_cond != 1){
         weatherOff();
-        prev_cond = 3;
+        prev_cond = 1;
       }
-      // Use the next 4 lines to tune what you want your effects to look like!
+      // Use the next lines to tune what you want your effects to look like!
       setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
       break;
 
     case 2 :  //clear-night
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 3){
+      if (prev_cond != 2){
         weatherOff();
-        prev_cond = 3;
+        prev_cond = 2;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
-      setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
+      flowThru(_sun, sizeof_sun, 0);   // This is the type of effect
       break;
 
     case 3 :      // Rain
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 1){
+      if (prev_cond != 3){
         weatherOff();
-        prev_cond = 1;
+        prev_cond = 3;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
       min_pwm = 0;
@@ -303,48 +339,56 @@ void loop()
       pwm_steps = 10;
       setArray(_clouds, sizeof_clouds, MAXPWM);
       flowThru(_snow, sizeof_snow, 1000);
-      flowThru(_rain, sizeof_rain, 6000);
+      //flowThru(_rain, sizeof_rain, 6000);
       break;
 
     case 5 :  // sleet
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 3){
+      if (prev_cond != 5){
         weatherOff();
-        prev_cond = 3;
+        prev_cond = 5;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
-      setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
+      min_pwm = 0;
+      pwm_steps = 10;
+      setArray(_clouds, sizeof_clouds, MAXPWM);
+      flowThru(_snow, sizeof_snow, 1000);
+      flowThru(_rain, sizeof_rain, 6000);
       break;
 
     case 6 :  // wind
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 3){
+      if (prev_cond != 6){
         weatherOff();
-        prev_cond = 3;
+        prev_cond = 6;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
-      setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
+      min_pwm = 0;
+      pwm_steps = 60;
+      flowThru(_clouds, sizeof_clouds, 0);   // This is the type of effect
       break;
 
     case 7 :  // fog
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 3){
+      if (prev_cond != 7){
         weatherOff();
-        prev_cond = 3;
+        prev_cond = 7;
       }
-      // Use the next 4 lines to tune what you want your effects to look like!
-      setArray(_sun, sizeof_sun, MAXPWM);   // This is the type of effect
+      // Use the next lines to tune what you want your effects to look like!
+      min_pwm = 400;
+      pwm_steps = 1;
+      setArray(_clouds, sizeof_clouds, head);
       break;
 
     case 8 :      // cloudy
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 2){
+      if (prev_cond != 8){
         weatherOff();
-        prev_cond = 2;
+        prev_cond = 8;
       }
       // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
@@ -355,28 +399,29 @@ void loop()
     case 9 :  // partly-cloudy-day
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 2){
+      if (prev_cond != 9){
         weatherOff();
-        prev_cond = 2;
+        prev_cond = 9;
       }
       // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
-      pwm_steps = 1;
-      setArray(_clouds, sizeof_clouds, head);
+      pwm_steps = 10;
+      flowThru(_clouds, sizeof_clouds, 0);
       setArray(_sun, sizeof_sun, MAXPWM);
       break;
 
     case 10 :  // partly-cloudy-night
       // This if statement is used to reduce flicker, may or may not be necessary in your case.
       // It simply turns off all weather elements ONLY the first time it hits this loop
-      if (prev_cond != 2){
+      if (prev_cond != 10){
         weatherOff();
-        prev_cond = 2;
+        prev_cond = 10;
       }
       // Use the next lines to tune what you want your effects to look like!
       min_pwm = 400;
-      pwm_steps = 1;
-      setArray(_clouds, sizeof_clouds, head);
+      pwm_steps = 10;
+      flowThru(_clouds, sizeof_clouds, 0);
+      flowThru(_sun, sizeof_sun, 0);
       break;
 
     default :     // None of the above, throw error
