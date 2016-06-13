@@ -3,7 +3,7 @@
     a lego scene depending on the current weather. Uses IFTTT for webhooks.
     Uses Adafruit TLC5947 display driver.
 
-    Teddy Lowe, May 2016
+    CC BY-SA Teddy Lowe, May 2016
     Lunchbox Electronics
     http://www.lunchboxelectronics.com/
 */

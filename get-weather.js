@@ -1,5 +1,5 @@
 // Webhook for hook.io for DIY Weather Tracker 
-// Teddy Lowe June 2016 - Lunchbox Electronics
+// CC BY-SA Teddy Lowe June 2016 - Lunchbox Electronics
 // Based on code from monkbroc what to wear https://github.com/monkbroc/what-to-wear
 
 function getForecast(url) {
