@@ -9,7 +9,7 @@
 */
 
 #define DEBUG             0   // 1 is on and 0 is off
-#define FORCECONDITION    3   // force a certain weather condition, with Debug
+#define FORCECONDITION    10   // force a certain weather condition, with Debug
 
 // How many boards do you have chained?
 #define NUM_TLC5947 1
@@ -311,6 +311,7 @@ void loop()
         prev_cond = 2;
       }
       // Use the next 4 lines to tune what you want your effects to look like!
+      pwm_steps = 30;
       flowThru(_sun, sizeof_sun, 0);   // This is the type of effect
       break;
 
